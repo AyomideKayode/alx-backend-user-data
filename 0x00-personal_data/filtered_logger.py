@@ -122,3 +122,31 @@ def get_db() -> connection.MySQLConnection:
         host=db_host,
         database=db_name
     )
+
+
+def main():
+    """
+    Main function to retrieve & display filtered user data from the database.
+    """
+    # get a database connection
+    db = get_db()
+    logger = get_logger()
+    cursor = db.cursor()
+
+    # Retrieve all rows from the users table
+    cursor.execute("SELECT * FROM users;")
+    fields = cursor.column_names
+
+    # Iterate over each row and log the filtered data
+    for row in cursor:
+        # Create a message string by joining the field names and values
+        message = "".join("{}={}; ".format(k, v) for k, v in zip(fields, row))
+        # Log the filtered message
+        logger.info(message.strip())
+
+    cursor.close()
+    db.close()
+
+
+if __name__ == "__main__":
+    main()

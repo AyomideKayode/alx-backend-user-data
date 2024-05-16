@@ -103,7 +103,6 @@ def get_logger() -> logging.Logger:
     return logger
 
 
-
 def get_db() -> connection.MySQLConnection:
     """ We use this function to get a database connection.
     By using environment variables, we can connect to the database.

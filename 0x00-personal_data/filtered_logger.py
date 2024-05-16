@@ -7,11 +7,17 @@ This formatter is used to redact sensitive data.
 Example usage:
     logger = get_logger()
     logger.info("User logged in: name=john, email=john@example.com")
+We define a list of fields to redact, PII_FIELDS.
+Contains a get_logger() function that returns a logger object.
 """
 
 import logging
 import re
 from typing import List
+
+# Define PII_FIELDS constant with fields to be considered as PII
+# Personal Identifiable Information (PII) fields, in other words sensitive
+PII_FIELDS = ('name', 'password', 'email', 'ssn', 'phone')
 
 
 def filter_datum(fields: List[str],
@@ -71,3 +77,24 @@ class RedactingFormatter(logging.Formatter):
         filtered_data = filter_datum(
             self.fields, self.REDACTION, original_message, self.SEPARATOR)
         return filtered_data
+
+
+def get_logger() -> logging.Logger:
+    """ Get a logger object
+    Returns:
+    A logging.Logger object.
+    """
+    logger = logging.getLogger('user_data')  # Create a logger object
+    logger.setLevel(logging.INFO)  # Set the logger level to INFO
+    logger.propagate = False  # Prevent the log messages from being propagated
+
+    # Add a console handler to the logger
+    console_handler = logging.StreamHandler()
+
+    # Set the formatter of the console handler to a RedactingFormatter object
+    formatter = RedactingFormatter(PII_FIELDS)
+    console_handler.setFormatter(formatter)
+
+    # Add the console handler to the logger
+    logger.addHandler(console_handler)
+    return logger

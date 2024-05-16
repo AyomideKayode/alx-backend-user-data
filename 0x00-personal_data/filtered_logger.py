@@ -14,6 +14,9 @@ Contains a get_logger() function that returns a logger object.
 import logging
 import re
 from typing import List
+import os
+import mysql.connector
+from mysql.connector import connection
 
 # Define PII_FIELDS constant with fields to be considered as PII
 # Personal Identifiable Information (PII) fields, in other words sensitive
@@ -98,3 +101,25 @@ def get_logger() -> logging.Logger:
     # Add the console handler to the logger
     logger.addHandler(console_handler)
     return logger
+
+
+
+def get_db() -> connection.MySQLConnection:
+    """ We use this function to get a database connection.
+    By using environment variables, we can connect to the database.
+    Returns:
+    A MySQL connection object to the database.
+    """
+    # Retrieve database credentials from environment variables
+    db_username = os.getenv('PERSONAL_DATA_DB_USERNAME', 'root')
+    db_password = os.getenv('PERSONAL_DATA_DB_PASSWORD', '')
+    db_host = os.getenv('PERSONAL_DATA_DB_HOST', 'localhost')
+    db_name = os.getenv('PERSONAL_DATA_DB_NAME')
+
+    # Establish and return a connection to the database
+    return mysql.connector.connect(
+        user=db_username,
+        password=db_password,
+        host=db_host,
+        database=db_name
+    )

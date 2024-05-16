@@ -253,7 +253,35 @@ bob@dylan:~$ PERSONAL_DATA_DB_USERNAME=root PERSONAL_DATA_DB_PASSWORD=root PERSO
 bob@dylan:~$
 ```
 
+### 5. [Encrypting passwords](./encrypt_password.py):-
+
+User passwords should NEVER be stored in plain text in a database.
+
+Implement a `hash_password` function that expects one string argument name `password` and returns a salted, hashed password, which is a byte string.
+
+Use the `bcrypt` package to perform the hashing (with `hashpw`).
+
+```bash
+bob@dylan:~$ cat main.py
+#!/usr/bin/env python3
+"""
+Main file
+"""
+
+hash_password = __import__('encrypt_password').hash_password
+
+password = "MyAmazingPassw0rd"
+print(hash_password(password))
+print(hash_password(password))
+
+bob@dylan:~$
+bob@dylan:~$ ./main.py
+b'$2b$12$Fnjf6ew.oPZtVksngJjh1.vYCnxRjPm2yt18kw6AuprMRpmhJVxJO'
+b'$2b$12$xSAw.bxfSTAlIBglPMXeL.SJnzme3Gm0E7eOEKOVV2OhqOakyUN5m'
+bob@dylan:~$
+```
+
 | Task | File |
 | ---- | ---- |
-| 5. Encrypting passwords | [encrypt_password.py](./encrypt_password.py) |
+
 | 6. Check valid password | [encrypt_password.py](./encrypt_password.py) |

@@ -412,6 +412,43 @@ bob@dylan:~$
 
 ### 4. [Define which routes don't need authentication](api/v1/auth) | [api/v1/auth/auth.py](./api/v1/auth/auth.py) :-
 
+Update the method `def require_auth(self, path: str, excluded_paths: List[str]) -> bool:` in `Auth` that returns `True` if the `path` is not in the list of strings `excluded_paths`:
+
+- Returns `True` if `excluded_paths` is `None` or empty
+- Returns `False` if `path` is in `excluded_paths`
+- Returns `True` if `path` is `None`
+- You can assume `excluded_paths` contains string `path` always ending by a `/`
+- This method must be slash tolerant: `path=/api/v1/status` and `path=/api/v1/status/` must be returned `False` if `excluded_paths` contains `/api/v1/status/`
+
+```bash
+bob@dylan:~$ cat main_1.py
+#!/usr/bin/env python3
+""" Main 1
+"""
+from api.v1.auth.auth import Auth
+
+a = Auth()
+
+print(a.require_auth(None, None))
+print(a.require_auth(None, []))
+print(a.require_auth("/api/v1/status/", []))
+print(a.require_auth("/api/v1/status/", ["/api/v1/status/"]))
+print(a.require_auth("/api/v1/status", ["/api/v1/status/"]))
+print(a.require_auth("/api/v1/users", ["/api/v1/status/"]))
+print(a.require_auth("/api/v1/users", ["/api/v1/status/", "/api/v1/stats"]))
+
+bob@dylan:~$
+bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 ./main_1.py
+True
+True
+True
+False
+False
+True
+True
+bob@dylan:~$
+```
+
 ### 5. [Request validation!](api/v1) | [api/v1/app.py](./api/v1/app.py), [api/v1/auth/auth.py](./api/v1/auth/auth.py) :-
 
 ### 6. [Basic auth](api/v1) | [api/v1/app.py](./api/v1/app.py), [api/v1/auth/basic_auth.py](./api/v1/auth/basic_auth.py) :-

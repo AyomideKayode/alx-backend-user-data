@@ -36,3 +36,15 @@ def unauthorized() -> str:
       - 401 error
     """
     abort(401)
+
+
+# Task 2: Create endpoint for Forbidden error
+# & create a function to trigger the error
+@app_views.route('/forbidden', methods=['GET'],
+                 strict_slashes=False)
+def forbidden() -> str:
+    """ GET /api/v1/forbidden
+    Return:
+      - 403 error
+    """
+    abort(403)

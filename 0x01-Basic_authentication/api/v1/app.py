@@ -23,6 +23,12 @@ if AUTH_TYPE == "auth":
     from api.v1.auth.auth import Auth
     auth = Auth()
 
+# Task 6: Update the auth variable to use the BasicAuth class
+# if AUTH_TYPE is basic_auth
+if AUTH_TYPE == "basic_auth":
+    from api.v1.auth.basic_auth import BasicAuth
+    auth = BasicAuth()
+
 
 @app.errorhandler(404)
 def not_found(error) -> str:

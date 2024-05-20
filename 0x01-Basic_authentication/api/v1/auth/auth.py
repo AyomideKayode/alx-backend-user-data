@@ -22,14 +22,14 @@ class Auth:
             return True
         if excluded_paths is None or len(excluded_paths) == 0:
             return True
-        
+
         # we nirmalize paths to have a / at the end if it doesn't have it
         if not path.endswith("/"):
             path += "/"
         # check if normalized path is in the excluded_paths
         if path in excluded_paths:
-          return False
-        
+            return False
+
         return True
 
     def authorization_header(self, request=None) -> str:

@@ -2,7 +2,9 @@
 """ BasicAuth module for API authentication
 """
 import base64
+from typing import TypeVar
 from api.v1.auth.auth import Auth
+from models.user import User
 
 
 class BasicAuth(Auth):
@@ -71,3 +73,29 @@ class BasicAuth(Auth):
         # we split the decoded string to get the email and password
         email, password = db64_ah.split(":", 1)
         return email, password
+
+    def user_object_from_credentials(self, user_email: str,
+                                     user_pwd: str) -> TypeVar('User'):
+        """ Retrieves the User instance based on the email and password.
+        Args:
+            user_email (str): The user's email address
+            user_pwd (str): The user's password
+        Returns:
+            User: The User instance, or None if not found
+        """
+        if user_email is None or not isinstance(user_email, str):
+            return None
+        if user_pwd is None or not isinstance(user_pwd, str):
+            return None
+        try:
+            # we search the user based on the email
+            user_list = User.search({"email": user_email})
+            if not user_list or user_list == []:  # check if user is valid
+                return None
+            for user in user_list:
+                # iterate over users and check if password is valid
+                if user.is_valid_password(user_pwd):
+                    return user
+            return None
+        except Exception as e:
+            return None

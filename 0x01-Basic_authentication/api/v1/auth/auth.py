@@ -23,12 +23,22 @@ class Auth:
         if excluded_paths is None or len(excluded_paths) == 0:
             return True
 
-        # we nirmalize paths to have a / at the end if it doesn't have it
-        if not path.endswith("/"):
-            path += "/"
-        # check if normalized path is in the excluded_paths
-        if path in excluded_paths:
-            return False
+        # we normalize paths to have a / at the end if it doesn't have it
+        # if not path.endswith("/"):
+        #     path += "/"
+        # # check if normalized path is in the excluded_paths
+        # if path in excluded_paths:
+        #     return False
+
+        # task 13 update: normalize the paths by removing trailing slashes
+        normalized_path = path.rstrip('/')
+
+        for excluded_path in excluded_paths:
+            if excluded_path.endswith('*'):
+                if normalized_path.startswith(excluded_path[:-1]):
+                    return False
+            elif normalized_path == excluded_path.rstrip('/'):
+                return False
 
         return True
 

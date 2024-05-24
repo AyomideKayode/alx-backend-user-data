@@ -425,40 +425,86 @@ abcde => 02079cb4-6847-48aa-924e-0514d82a43f4: {'61997a1b-3f8a-4b0f-87f6-19d5caf
 bob@dylan:~$
 ```
 
-### 3. [Auth class](api/v1) | [api/v1/auth](./api/v1/auth), [api/v1/auth/__init__.py](./api/v1/auth/__init__.py), [api/v1/auth/auth.py](./api/v1/auth/auth.py) :-
+### 3. [User ID for Session ID](api/v1/auth/session_auth.py) :-
 
-Now you will create a class to manage the API authentication.
+Update `SessionAuth` class:
 
-- Create a folder `api/v1/auth`
-- Create an empty file `api/v1/auth/__init__.py`
-- Create the class `Auth`:
-  - in the file `api/v1/auth/auth.py`
-  - import `request` from `flask`
-  - class name `Auth`
-  - public method `def require_auth(self, path: str, excluded_paths: List[str]) -> bool:` that returns `False` - `path` and `excluded_paths` will be used later, now, you don’t need to take care of them
-  - public method `def authorization_header(self, request=None) -> str:` that returns `None` - `request` will be the Flask request object
-  - public method `def current_user(self, request=None) -> TypeVar('User'):` that returns `None` - `request` will be the Flask request object
+Create an instance method `def user_id_for_session_id(self, session_id: str = None) -> str:` that returns a `User` ID based on a Session ID:
 
-This class is the template for all authentication system you will implement.
+- Return `None` if `session_id` is `None`
+- Return `None` if `session_id` is not a string
+- Return the value (the User ID) for the key `session_id` in the dictionary `user_id_by_session_id`.
+- You must use `.get()` built-in for accessing in a dictionary a value based on key
+
+Now you have 2 methods (`create_session` and `user_id_for_session_id`) for storing and retrieving a link between a `User` ID and a Session ID.
 
 ```bash
-bob@dylan:~$ cat main_0.py
+bob@dylan:~$ cat main_2.py 
 #!/usr/bin/env python3
-""" Main 0
+""" Main 2
 """
-from api.v1.auth.auth import Auth
+from api.v1.auth.session_auth import SessionAuth
 
-a = Auth()
+sa = SessionAuth()
 
-print(a.require_auth("/api/v1/status/", ["/api/v1/status/"]))
-print(a.authorization_header())
-print(a.current_user())
+user_id_1 = "abcde"
+session_1 = sa.create_session(user_id_1)
+print("{} => {}: {}".format(user_id_1, session_1, sa.user_id_by_session_id))
 
-bob@dylan:~$ 
-bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 ./main_0.py
-False
-None
-None
+user_id_2 = "fghij"
+session_2 = sa.create_session(user_id_2)
+print("{} => {}: {}".format(user_id_2, session_2, sa.user_id_by_session_id))
+
+print("---")
+
+tmp_session_id = None
+tmp_user_id = sa.user_id_for_session_id(tmp_session_id)
+print("{} => {}".format(tmp_session_id, tmp_user_id))
+
+tmp_session_id = 89
+tmp_user_id = sa.user_id_for_session_id(tmp_session_id)
+print("{} => {}".format(tmp_session_id, tmp_user_id))
+
+tmp_session_id = "doesntexist"
+tmp_user_id = sa.user_id_for_session_id(tmp_session_id)
+print("{} => {}".format(tmp_session_id, tmp_user_id))
+
+print("---")
+
+tmp_session_id = session_1
+tmp_user_id = sa.user_id_for_session_id(tmp_session_id)
+print("{} => {}".format(tmp_session_id, tmp_user_id))
+
+tmp_session_id = session_2
+tmp_user_id = sa.user_id_for_session_id(tmp_session_id)
+print("{} => {}".format(tmp_session_id, tmp_user_id))
+
+print("---")
+
+session_1_bis = sa.create_session(user_id_1)
+print("{} => {}: {}".format(user_id_1, session_1_bis, sa.user_id_by_session_id))
+
+tmp_user_id = sa.user_id_for_session_id(session_1_bis)
+print("{} => {}".format(session_1_bis, tmp_user_id))
+
+tmp_user_id = sa.user_id_for_session_id(session_1)
+print("{} => {}".format(session_1, tmp_user_id))
+
+bob@dylan:~$
+bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 AUTH_TYPE=session_auth ./main_2.py 
+abcde => 8647f981-f503-4638-af23-7bb4a9e4b53f: {'8647f981-f503-4638-af23-7bb4a9e4b53f': 'abcde'}
+fghij => a159ee3f-214e-4e91-9546-ca3ce873e975: {'a159ee3f-214e-4e91-9546-ca3ce873e975': 'fghij', '8647f981-f503-4638-af23-7bb4a9e4b53f': 'abcde'}
+---
+None => None
+89 => None
+doesntexist => None
+---
+8647f981-f503-4638-af23-7bb4a9e4b53f => abcde
+a159ee3f-214e-4e91-9546-ca3ce873e975 => fghij
+---
+abcde => 5d2930ba-f6d6-4a23-83d2-4f0abc8b8eee: {'a159ee3f-214e-4e91-9546-ca3ce873e975': 'fghij', '8647f981-f503-4638-af23-7bb4a9e4b53f': 'abcde', '5d2930ba-f6d6-4a23-83d2-4f0abc8b8eee': 'abcde'}
+5d2930ba-f6d6-4a23-83d2-4f0abc8b8eee => abcde
+8647f981-f503-4638-af23-7bb4a9e4b53f => abcde
 bob@dylan:~$
 ```
 

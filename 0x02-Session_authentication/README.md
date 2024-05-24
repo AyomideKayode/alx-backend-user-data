@@ -226,7 +226,7 @@ Successfully installed werkzeug-1.0.1
 
 ## Tasks
 
-### 0. [Simple-basic-API](./) :-
+### 0. [Et moi, et moi, et moi!](./api/v1/views/users.py) :-
 
 Copy all your work of the 0x01. Basic authentication project in this new folder.
 
@@ -320,28 +320,24 @@ bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users/me" -H "Authorization: Basic
 bob@dylan:~$
 ```
 
-### 1. [Error handler: Unauthorized](api/v1) | [api/v1/app.py](./api/v1/app.py), [api/v1/views/index.py](./api/v1/views/index.py) :-
+### 1. [Empty Session](api/v1/app.py) | [api/v1/auth/session_auth.py](./api/v1/auth/session_auth.py) :-
 
-What the HTTP status code for a request unauthorized? `401` of course!
+Create a class `SessionAuth` that inherits from `Auth`. For the moment this class will be empty. It’s the first step for creating a new authentication mechanism:
 
-Edit `api/v1/app.py`:
+- validate if everything inherits correctly without any overloading
+- validate the “switch” by using environment variables
 
-- Add a new error handler for this status code, the response must be:
-  - a JSON: `{"error": "Unauthorized"}`
-  - status code `401`
-  - you must use `jsonify` from Flask
+Update `api/v1/app.py` for using `SessionAuth` instance for the variable `auth` depending of the value of the environment variable `AUTH_TYPE`, If `AUTH_TYPE` is equal to `session_auth`:
 
-For testing this new error handler, add a new endpoint in `api/v1/views/index.py`:
+- import `SessionAuth` from `api.v1.auth.session_auth`
+- create an instance of `SessionAuth` and assign it to the variable `auth`
 
-- Route: `GET /api/v1/unauthorized`
-- This endpoint must raise a 401 error by using `abort` - [Custom Error Pages](https://flask.palletsprojects.com/en/1.1.x/patterns/errorpages/)
-
-By calling `abort(401)`, the error handler for 401 will be executed.
+Otherwise, keep the previous mechanism.
 
 In the first terminal:
 
 ```bash
-bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 python3 -m api.v1.app
+bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 AUTH_TYPE=session_auth python3 -m api.v1.app
  * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
 ....
 ```
@@ -349,31 +345,25 @@ bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 python3 -m api.v1.app
 In a second terminal:
 
 ```bash
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/unauthorized"
+bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/status"
 {
-  "error": "Unauthorized"
+  "status": "OK"
 }
 bob@dylan:~$
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/unauthorized" -vvv
-*   Trying 0.0.0.0...
-* TCP_NODELAY set
-* Connected to 0.0.0.0 (127.0.0.1) port 5000 (#0)
-> GET /api/v1/unauthorized HTTP/1.1
-> Host: 0.0.0.0:5000
-> User-Agent: curl/7.54.0
-> Accept: */*
-> 
-* HTTP 1.0, assume close after body
-< HTTP/1.0 401 UNAUTHORIZED
-< Content-Type: application/json
-< Content-Length: 30
-< Server: Werkzeug/0.12.1 Python/3.4.3
-< Date: Sun, 24 Sep 2017 22:50:40 GMT
-< 
+bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/status/"
+{
+  "status": "OK"
+}
+bob@dylan:~$
+bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users"
 {
   "error": "Unauthorized"
 }
-* Closing connection 0
+bob@dylan:~$ 
+bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users" -H "Authorization: Test"
+{
+  "error": "Forbidden"
+}
 bob@dylan:~$
 ```
 

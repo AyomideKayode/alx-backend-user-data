@@ -7,13 +7,14 @@ from api.v1.views import app_views
 from flask import Flask, jsonify, abort, request
 from flask_cors import (CORS, cross_origin)
 import os
-
+from api.v1.auth.auth import Auth
+from api.v1.auth.basic_auth import BasicAuth
+from models.user import User
 
 app = Flask(__name__)
 app.register_blueprint(app_views)
 CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
 
-# Task 5: Initialize auth variable to None
 auth = None
 
 # We load and assign the right instance of authentication to auth
@@ -23,8 +24,6 @@ if AUTH_TYPE == "auth":
     from api.v1.auth.auth import Auth
     auth = Auth()
 
-# Task 6: Update the auth variable to use the BasicAuth class
-# if AUTH_TYPE is basic_auth
 if AUTH_TYPE == "basic_auth":
     from api.v1.auth.basic_auth import BasicAuth
     auth = BasicAuth()
@@ -37,8 +36,6 @@ def not_found(error) -> str:
     return jsonify({"error": "Not found"}), 404
 
 
-# Task 1: add errorhandler for 401 Unauthorized &
-# create endpoint to trigger the error
 @app.errorhandler(401)
 def unauthorized(error) -> str:
     """ Unauthorized handler
@@ -46,8 +43,6 @@ def unauthorized(error) -> str:
     return jsonify({"error": "Unauthorized"}), 401
 
 
-# Task 2: add errorhandler for 403 Forbidden &
-# create endpoint to trigger the error
 @app.errorhandler(403)
 def forbidden(error) -> str:
     """ Forbidden handler
@@ -55,8 +50,6 @@ def forbidden(error) -> str:
     return jsonify({"error": "Forbidden"}), 403
 
 
-# Task 5: add the before_request handler to check for
-# authentication before each request
 @app.before_request
 def before_request() -> str:
     """ Handler before each request to validate authentication.
@@ -71,9 +64,10 @@ def before_request() -> str:
         abort(401)
     if auth.current_user(request) is None:
         abort(403)
+    request.current_user = auth.current_user(request)
 
 
 if __name__ == "__main__":
     host = getenv("API_HOST", "0.0.0.0")
     port = getenv("API_PORT", "5000")
-    app.run(host=host, port=port)
+    app.run(debug=True, host=host, port=port)

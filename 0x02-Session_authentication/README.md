@@ -562,7 +562,7 @@ Cookie value: None
 bob@dylan:~$
 ```
 
-### 5. [Request validation!](api/v1) | [api/v1/app.py](./api/v1/app.py), [api/v1/auth/auth.py](./api/v1/auth/auth.py) :-
+### 5. [Before Request](api/v1/app.py) :-
 
 Update the `@app.before_request` method in `api/v1/app.py`:
 
@@ -606,21 +606,60 @@ bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users/me" --cookie "_my_session_id
 bob@dylan:~$
 ```
 
-### 6. [Basic auth](api/v1) | [api/v1/app.py](./api/v1/app.py), [api/v1/auth/basic_auth.py](./api/v1/auth/basic_auth.py) :-
+### 6. [Use Session ID for identifying a User](api/v1/auth/session_auth.py) :-
 
-Create a class `BasicAuth` that inherits from `Auth`. For the moment this class will be empty.
+Update `SessionAuth` class:
 
-Update `api/v1/app.py` for using `BasicAuth` class instead of `Auth` depending of the value of the environment variable `AUTH_TYPE`, If `AUTH_TYPE` is equal to `basic_auth`:
+Create an instance method `def current_user(self, request=None):` (overload) that returns a User instance based on a cookie value:
 
-- import `BasicAuth` from `api.v1.auth.basic_auth`
-- create an instance of `BasicAuth` and assign it to the variable `auth`
+- You must use `self.session_cookie(...)` and `self.user_id_for_session_id(...)` to return the `User` ID based on the cookie `_my_session_id`
+- By using this User ID, you will be able to retrieve a `User` instance from the database - you can use `User.get(...)` for retrieving a `User` from the database.
 
-Otherwise, keep the previous mechanism with `auth` an instance of `Auth`.
+Now, you will be able to get a User based on his session ID.
 
 In the first terminal:
 
 ```bash
-bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 AUTH_TYPE=basic_auth python3 -m api.v1.app
+bob@dylan:~$ cat main_4.py
+#!/usr/bin/env python3
+""" Main 4
+"""
+from flask import Flask, request
+from api.v1.auth.session_auth import SessionAuth
+from models.user import User
+
+""" Create a user test """
+user_email = "bobsession@hbtn.io"
+user_clear_pwd = "fake pwd"
+
+user = User()
+user.email = user_email
+user.password = user_clear_pwd
+user.save()
+
+""" Create a session ID """
+sa = SessionAuth()
+session_id = sa.create_session(user.id)
+print("User with ID: {} has a Session ID: {}".format(user.id, session_id))
+
+""" Create a Flask app """
+app = Flask(__name__)
+
+@app.route('/', methods=['GET'], strict_slashes=False)
+def root_path():
+    """ Root path
+    """
+    request_user = sa.current_user(request)
+    if request_user is None:
+        return "No user found\n"
+    return "User found: {}\n".format(request_user.id)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port="5000")
+
+bob@dylan:~$
+bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 AUTH_TYPE=session_auth SESSION_NAME=_my_session_id ./main_4.py
+User with ID: cf3ddee1-ff24-49e4-a40b-2540333fe992 has a Session ID: 9d1648aa-da79-4692-8236-5f9d7f9e9485
  * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
 ....
 ```
@@ -628,25 +667,14 @@ bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 AUTH_TYPE=basic_auth python3 -m api.
 In a second terminal:
 
 ```bash
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/status"
-{
-  "status": "OK"
-}
+bob@dylan:~$ curl "http://0.0.0.0:5000/"
+No user found
 bob@dylan:~$
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/status/"
-{
-  "status": "OK"
-}
+bob@dylan:~$ curl "http://0.0.0.0:5000/" --cookie "_my_session_id=Holberton"
+No user found
 bob@dylan:~$
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users"
-{
-  "error": "Unauthorized"
-}
-bob@dylan:~$
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users" -H "Authorization: Test"
-{
-  "error": "Forbidden"
-}
+bob@dylan:~$ curl "http://0.0.0.0:5000/" --cookie "_my_session_id=9d1648aa-da79-4692-8236-5f9d7f9e9485"
+User found: cf3ddee1-ff24-49e4-a40b-2540333fe992
 bob@dylan:~$
 ```
 

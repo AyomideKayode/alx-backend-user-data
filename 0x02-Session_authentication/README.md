@@ -369,58 +369,58 @@ bob@dylan:~$
 
 ### 2. [Error handler: Forbidden](api/v1) | [api/v1/app.py](./api/v1/app.py), [api/v1/views/index.py](./api/v1/views/index.py) :-
 
-What the HTTP status code for a request where the user is authenticate but not allowed to access to a resource? `403` of course!
+Update `SessionAuth` class:
 
-Edit `api/v1/app.py`:
-
-- Add a new error handler for this status code, the response must be:
-  - a JSON: `{"error": "Forbidden"}`
-  - status code `403`
-  - you must use `jsonify` from Flask
-
-For testing this new error handler, add a new endpoint in `api/v1/views/index.py`:
-
-- Route: `GET /api/v1/forbidden`
-- This endpoint must raise a `403` error by using `abort` - [Custom Error Pages](https://flask.palletsprojects.com/en/1.1.x/patterns/errorpages/)
-
-By calling `abort(403)`, the error handler for 403 will be executed.
-
-In the first terminal:
+Create a class attribute `user_id_by_session_id` initialized by an empty dictionary
+Create an instance method `def create_session(self, user_id: str = None) -> str:` that creates a Session ID for a user_id:
+Return None if user_id is None
+Return None if user_id is not a string
+Otherwise:
+Generate a Session ID using uuid module and uuid4() like id in Base
+Use this Session ID as key of the dictionary user_id_by_session_id - the value for this key must be user_id
+Return the Session ID
+The same user_id can have multiple Session ID - indeed, the user_id is the value in the dictionary user_id_by_session_id
+Now you an “in-memory” Session ID storing. You will be able to retrieve an User id based on a Session ID.
 
 ```bash
-bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 python3 -m api.v1.app
- * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
-....
-```
+bob@dylan:~$ cat  main_1.py 
+#!/usr/bin/env python3
+""" Main 1
+"""
+from api.v1.auth.session_auth import SessionAuth
 
-In a second terminal:
+sa = SessionAuth()
 
-```bash
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/forbidden"
-{
-  "error": "Forbidden"
-}
+print("{}: {}".format(type(sa.user_id_by_session_id), sa.user_id_by_session_id))
+
+user_id = None
+session = sa.create_session(user_id)
+print("{} => {}: {}".format(user_id, session, sa.user_id_by_session_id))
+
+user_id = 89
+session = sa.create_session(user_id)
+print("{} => {}: {}".format(user_id, session, sa.user_id_by_session_id))
+
+user_id = "abcde"
+session = sa.create_session(user_id)
+print("{} => {}: {}".format(user_id, session, sa.user_id_by_session_id))
+
+user_id = "fghij"
+session = sa.create_session(user_id)
+print("{} => {}: {}".format(user_id, session, sa.user_id_by_session_id))
+
+user_id = "abcde"
+session = sa.create_session(user_id)
+print("{} => {}: {}".format(user_id, session, sa.user_id_by_session_id))
+
 bob@dylan:~$
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/forbidden" -vvv
-*   Trying 0.0.0.0...
-* TCP_NODELAY set
-* Connected to 0.0.0.0 (127.0.0.1) port 5000 (#0)
-> GET /api/v1/forbidden HTTP/1.1
-> Host: 0.0.0.0:5000
-> User-Agent: curl/7.54.0
-> Accept: */*
-> 
-* HTTP 1.0, assume close after body
-< HTTP/1.0 403 FORBIDDEN
-< Content-Type: application/json
-< Content-Length: 27
-< Server: Werkzeug/0.12.1 Python/3.4.3
-< Date: Sun, 24 Sep 2017 22:54:22 GMT
-< 
-{
-  "error": "Forbidden"
-}
-* Closing connection 0
+bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 AUTH_TYPE=session_auth ./main_1.py 
+<class 'dict'>: {}
+None => None: {}
+89 => None: {}
+abcde => 61997a1b-3f8a-4b0f-87f6-19d5cafee63f: {'61997a1b-3f8a-4b0f-87f6-19d5cafee63f': 'abcde'}
+fghij => 69e45c25-ec89-4563-86ab-bc192dcc3b4f: {'61997a1b-3f8a-4b0f-87f6-19d5cafee63f': 'abcde', '69e45c25-ec89-4563-86ab-bc192dcc3b4f': 'fghij'}
+abcde => 02079cb4-6847-48aa-924e-0514d82a43f4: {'61997a1b-3f8a-4b0f-87f6-19d5cafee63f': 'abcde', '02079cb4-6847-48aa-924e-0514d82a43f4': 'abcde', '69e45c25-ec89-4563-86ab-bc192dcc3b4f': 'fghij'}
 bob@dylan:~$
 ```
 

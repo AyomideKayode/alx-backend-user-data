@@ -508,42 +508,57 @@ abcde => 5d2930ba-f6d6-4a23-83d2-4f0abc8b8eee: {'a159ee3f-214e-4e91-9546-ca3ce87
 bob@dylan:~$
 ```
 
-### 4. [Define which routes don't need authentication](api/v1/auth) | [api/v1/auth/auth.py](./api/v1/auth/auth.py) :-
+### 4. [Session Cookie](api/v1/auth/auth.py) :-
 
-Update the method `def require_auth(self, path: str, excluded_paths: List[str]) -> bool:` in `Auth` that returns `True` if the `path` is not in the list of strings `excluded_paths`:
+Update `api/v1/auth/auth.py` by adding the method `def session_cookie(self, request=None):` that returns a cookie value from a request:
 
-- Returns `True` if `excluded_paths` is `None` or empty
-- Returns `False` if `path` is in `excluded_paths`
-- Returns `True` if `path` is `None`
-- You can assume `excluded_paths` contains string `path` always ending by a `/`
-- This method must be slash tolerant: `path=/api/v1/status` and `path=/api/v1/status/` must be returned `False` if `excluded_paths` contains `/api/v1/status/`
+- Return `None` if `request` is `None`
+- Return the value of the cookie named `_my_session_id` from `request` - the name of the cookie must be defined by the environment variable `SESSION_NAME`
+- You must use `.get()` built-in for accessing the cookie in the request cookies dictionary
+- You must use the environment variable `SESSION_NAME` to define the name of the cookie used for the Session ID
+
+In the first terminal:
 
 ```bash
-bob@dylan:~$ cat main_1.py
+bob@dylan:~$ cat main_3.py
 #!/usr/bin/env python3
-""" Main 1
+""" Cookie server
 """
+from flask import Flask, request
 from api.v1.auth.auth import Auth
 
-a = Auth()
+auth = Auth()
 
-print(a.require_auth(None, None))
-print(a.require_auth(None, []))
-print(a.require_auth("/api/v1/status/", []))
-print(a.require_auth("/api/v1/status/", ["/api/v1/status/"]))
-print(a.require_auth("/api/v1/status", ["/api/v1/status/"]))
-print(a.require_auth("/api/v1/users", ["/api/v1/status/"]))
-print(a.require_auth("/api/v1/users", ["/api/v1/status/", "/api/v1/stats"]))
+app = Flask(__name__)
 
+@app.route('/', methods=['GET'], strict_slashes=False)
+def root_path():
+    """ Root path
+    """
+    return "Cookie value: {}\n".format(auth.session_cookie(request))
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port="5000")
+
+bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 AUTH_TYPE=session_auth SESSION_NAME=_my_session_id ./main_3.py 
+ * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
+....
+```
+
+In a second terminal:
+
+```bash
+bob@dylan:~$ curl "http://0.0.0.0:5000"
+Cookie value: None
 bob@dylan:~$
-bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 ./main_1.py
-True
-True
-True
-False
-False
-True
-True
+bob@dylan:~$ curl "http://0.0.0.0:5000" --cookie "_my_session_id=Hello"
+Cookie value: Hello
+bob@dylan:~$
+bob@dylan:~$ curl "http://0.0.0.0:5000" --cookie "_my_session_id=C is fun"
+Cookie value: C is fun
+bob@dylan:~$
+bob@dylan:~$ curl "http://0.0.0.0:5000" --cookie "_my_session_id_fake"
+Cookie value: None
 bob@dylan:~$
 ```
 

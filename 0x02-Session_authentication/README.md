@@ -680,42 +680,117 @@ bob@dylan:~$
 
 ### 7. [Basic - Base64 part](api/v1) | [api/v1/auth/basic_auth.py](./api/v1/auth/basic_auth.py) :-
 
-Add the method `def extract_base64_authorization_header(self, authorization_header: str) -> str:` in the class `BasicAuth` that returns the Base64 part of the `Authorization` header for a Basic Authentication:
+Create a new Flask view that handles all routes for the Session authentication.
 
-- Return `None` if `authorization_header` is `None`
-- Return `None` if `authorization_header` is not a string
-- Return `None` if `authorization_header` doesn’t start by `Basic` (with a space at the end)
-- Otherwise, return the value after `Basic` (after the space)
-- You can assume `authorization_header` contains only one `Basic`
+In the file `api/v1/views/session_auth.py`, create a route `POST /auth_session/login` (= `POST /api/v1/auth_session/login`):
+
+- Slash tolerant (`/auth_session/login` == `/auth_session/login/`)
+- You must use `request.form.get()` to retrieve `email` and `password` parameters
+- If `email` is missing or empty, return the JSON `{ "error": "email missing" }` with the status code `400`
+- If `password` is missing or empty, return the JSON `{ "error": "password missing" }` with the status code `400`
+- Retrieve the `User` instance based on the `email` - you must use the class method `search` of `User` (same as the one used for the BasicAuth)
+- If no `User` found, return the JSON `{ "error": "no user found for this email" }` with the status code `404`
+- If the `password` is not the one of the `User` found, return the JSON `{ "error": "wrong password" }` with the status code `401` - you must use `is_valid_password` from the `User` instance
+- Otherwise, create a Session ID for the `User` ID:
+  - You must use `from api.v1.app import auth` - **WARNING: please import it only where you need it** - not on top of the file (can generate circular import - and break first tasks of this project)
+  - You must use `auth.create_session(..)` for creating a Session ID
+  - Return the dictionary representation of the `User` - you must use `to_json()` method from User
+  - You must set the cookie to the response - you must use the value of the environment variable `SESSION_NAME` as cookie name - [tip](https://stackoverflow.com/questions/26587485/can-a-cookie-be-set-when-using-jsonify)
+
+In the file `api/v1/views/__init__.py`, you must add this new view at the end of the file.
+
+In the first terminal:
 
 ```bash
-bob@dylan:~$ cat main_2.py
-#!/usr/bin/env python3
-""" Main 2
-"""
-from api.v1.auth.basic_auth import BasicAuth
+bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 AUTH_TYPE=session_auth SESSION_NAME=_my_session_id python3 -m api.v1.app
+ * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
+....
+```
 
-a = BasicAuth()
+In a second terminal:
 
-print(a.extract_base64_authorization_header(None))
-print(a.extract_base64_authorization_header(89))
-print(a.extract_base64_authorization_header("Holberton School"))
-print(a.extract_base64_authorization_header("Basic Holberton"))
-print(a.extract_base64_authorization_header("Basic SG9sYmVydG9u"))
-print(a.extract_base64_authorization_header("Basic SG9sYmVydG9uIFNjaG9vbA=="))
-print(a.extract_base64_authorization_header("Basic1234"))
-
+```bash
+bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/auth_session/login" -XGET
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<title>405 Method Not Allowed</title>
+<h1>Method Not Allowed</h1>
+<p>The method is not allowed for the requested URL.</p>
 bob@dylan:~$
-bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 ./main_2.py
-None
-None
-None
-Holberton
-SG9sYmVydG9u
-SG9sYmVydG9uIFNjaG9vbA==
-None
+bob@dylan:~$  curl "http://0.0.0.0:5000/api/v1/auth_session/login" -XPOST
+{
+  "error": "email missing"
+}
+bob@dylan:~$ 
+bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/auth_session/login" -XPOST -d "email=guillaume@hbtn.io"
+{
+  "error": "password missing"
+}
+bob@dylan:~$ 
+bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/auth_session/login" -XPOST -d "email=guillaume@hbtn.io" -d "password=test"
+{
+  "error": "no user found for this email"
+}
+bob@dylan:~$
+bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/auth_session/login" -XPOST -d "email=bobsession@hbtn.io" -d "password=test"
+{
+  "error": "wrong password"
+}
+bob@dylan:~$
+bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/auth_session/login" -XPOST -d "email=bobsession@hbtn.io" -d "password=fake pwd"
+{
+  "created_at": "2017-10-16 04:23:04", 
+  "email": "bobsession@hbtn.io", 
+  "first_name": null, 
+  "id": "cf3ddee1-ff24-49e4-a40b-2540333fe992", 
+  "last_name": null, 
+  "updated_at": "2017-10-16 04:23:04"
+}
+bob@dylan:~$
+bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/auth_session/login" -XPOST -d "email=bobsession@hbtn.io" -d "password=fake pwd" -vvv
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 0.0.0.0...
+* TCP_NODELAY set
+* Connected to 0.0.0.0 (127.0.0.1) port 5000 (#0)
+> POST /api/v1/auth_session/login HTTP/1.1
+> Host: 0.0.0.0:5000
+> User-Agent: curl/7.54.0
+> Accept: */*
+> Content-Length: 42
+> Content-Type: application/x-www-form-urlencoded
+> 
+* upload completely sent off: 42 out of 42 bytes
+* HTTP 1.0, assume close after body
+< HTTP/1.0 200 OK
+< Content-Type: application/json
+< Set-Cookie: _my_session_id=df05b4e1-d117-444c-a0cc-ba0d167889c4; Path=/
+< Access-Control-Allow-Origin: *
+< Content-Length: 210
+< Server: Werkzeug/0.12.1 Python/3.4.3
+< Date: Mon, 16 Oct 2017 04:57:08 GMT
+< 
+{
+  "created_at": "2017-10-16 04:23:04", 
+  "email": "bobsession@hbtn.io", 
+  "first_name": null, 
+  "id": "cf3ddee1-ff24-49e4-a40b-2540333fe992", 
+  "last_name": null, 
+  "updated_at": "2017-10-16 04:23:04"
+}
+* Closing connection 0
+bob@dylan:~$ 
+bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users/me" --cookie "_my_session_id=df05b4e1-d117-444c-a0cc-ba0d167889c4"
+{
+  "created_at": "2017-10-16 04:23:04", 
+  "email": "bobsession@hbtn.io", 
+  "first_name": null, 
+  "id": "cf3ddee1-ff24-49e4-a40b-2540333fe992", 
+  "last_name": null, 
+  "updated_at": "2017-10-16 04:23:04"
+}
 bob@dylan:~$
 ```
+
+Now you have an authentication based on a Session ID stored in cookie, perfect for a website (browsers love cookies).
 
 ### 8. [Basic - Base64 decode](api/v1) | [api/v1/auth/basic_auth.py](./api/v1/auth/basic_auth.py) :-
 

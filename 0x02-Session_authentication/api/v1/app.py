@@ -21,10 +21,12 @@ auth = None
 # We load and assign the right instance of authentication to auth
 AUTH_TYPE = getenv("AUTH_TYPE")
 
+# add auth for if AUTH_TYPE is auth
 if AUTH_TYPE == "auth":
     from api.v1.auth.auth import Auth
     auth = Auth()
 
+# add basic auth for if AUTH_TYPE is basic_auth
 if AUTH_TYPE == "basic_auth":
     from api.v1.auth.basic_auth import BasicAuth
     auth = BasicAuth()
@@ -33,6 +35,11 @@ if AUTH_TYPE == "basic_auth":
 if AUTH_TYPE == "session_auth":
     from api.v1.auth.session_auth import SessionAuth
     auth = SessionAuth()
+
+# add session exp auth for if AUTH_TYPE is session_exp_auth
+if AUTH_TYPE == "session_exp_auth":
+    from api.v1.auth.session_exp_auth import SessionExpAuth
+    auth = SessionExpAuth()
 
 
 @app.errorhandler(404)

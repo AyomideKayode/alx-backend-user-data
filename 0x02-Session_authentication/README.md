@@ -678,7 +678,7 @@ User found: cf3ddee1-ff24-49e4-a40b-2540333fe992
 bob@dylan:~$
 ```
 
-### 7. [Basic - Base64 part](api/v1) | [api/v1/auth/basic_auth.py](./api/v1/auth/basic_auth.py) :-
+### 7. [New View for Session Authentication](api/v1/views/session_auth.py) :-
 
 Create a new Flask view that handles all routes for the Session authentication.
 
@@ -792,181 +792,27 @@ bob@dylan:~$
 
 Now you have an authentication based on a Session ID stored in cookie, perfect for a website (browsers love cookies).
 
-### 8. [Basic - Base64 decode](api/v1) | [api/v1/auth/basic_auth.py](./api/v1/auth/basic_auth.py) :-
+### 8. [Logout](api/v1) | [api/v1/auth/basic_auth.py](./api/v1/auth/basic_auth.py) :-
 
-Add the method `def decode_base64_authorization_header(self, base64_authorization_header: str) -> str:` in the class `BasicAuth` that returns the decoded value of a Base64 string `base64_authorization_header`:
+Update the class `SessionAuth` by adding a new method `def destroy_session(self, request=None):` that deletes the user session / logout:
 
-- Return `None` if `base64_authorization_header` is `None`
-- Return `None` if `base64_authorization_header` is not a string
-- Return `None` if `base64_authorization_header` is not a valid Base64 - you can use `try/except`
-- Otherwise, return the decoded value as UTF8 string - you can use `decode('utf-8')`
+- If the `request` is equal to `None`, return `False`
+- If the `request` doesn’t contain the Session ID cookie, return `False` - you must use `self.session_cookie(request)`
+- If the Session ID of the request is not linked to any User ID, return `False` - you must use `self.user_id_for_session_id(...)`
+- Otherwise, delete in `self.user_id_by_session_id` the Session ID (as key of this dictionary) and return `True`
 
-```bash
-bob@dylan:~$ cat main_3.py
-#!/usr/bin/env python3
-""" Main 3
-"""
-from api.v1.auth.basic_auth import BasicAuth
+Update the file `api/v1/views/session_auth.py`, by adding a new route DELETE `/api/v1/auth_session/logout`:
 
-a = BasicAuth()
-
-print(a.decode_base64_authorization_header(None))
-print(a.decode_base64_authorization_header(89))
-print(a.decode_base64_authorization_header("Holberton School"))
-print(a.decode_base64_authorization_header("SG9sYmVydG9u"))
-print(a.decode_base64_authorization_header("SG9sYmVydG9uIFNjaG9vbA=="))
-print(a.decode_base64_authorization_header(a.extract_base64_authorization_header("Basic SG9sYmVydG9uIFNjaG9vbA==")))
-
-bob@dylan:~$
-bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 ./main_3.py
-None
-None
-None
-Holberton
-Holberton School
-Holberton School
-bob@dylan:~$
-```
-
-### 9. [Basic - User credentials](api/v1/auth), [api/v1/auth/basic_auth.py](./api/v1/auth/basic_auth.py) :-
-
-Add the method `def extract_user_credentials(self, decoded_base64_authorization_header: str) -> (str, str)` in the class `BasicAuth` that returns the user email and password from the Base64 decoded value.
-
-- This method must return 2 values
-- Return `None, None` if `decoded_base64_authorization_header` is `None`
-- Return `None, None` if `decoded_base64_authorization_header` is not a string
-- Return `None, None` if `decoded_base64_authorization_header` doesn’t contain `:`
-- Otherwise, return the user email and the user password - these 2 values must be separated by a `:`
-- You can assume `decoded_base64_authorization_header` will contain only one `:`
-
-```bash
-bob@dylan:~$ cat main_4.py
-#!/usr/bin/env python3
-""" Main 4
-"""
-from api.v1.auth.basic_auth import BasicAuth
-
-a = BasicAuth()
-
-print(a.extract_user_credentials(None))
-print(a.extract_user_credentials(89))
-print(a.extract_user_credentials("Holberton School"))
-print(a.extract_user_credentials("Holberton:School"))
-print(a.extract_user_credentials("bob@gmail.com:toto1234"))
-
-bob@dylan:~$
-bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 ./main_4.py
-(None, None)
-(None, None)
-(None, None)
-('Holberton', 'School')
-('bob@gmail.com', 'toto1234')
-bob@dylan:~$
-```
-
-### 10. [Basic - User object](api/v1/auth) | [api/v1/auth/basic_auth.py](./api/v1/auth/basic_auth.py) :-
-
-Add the method `def user_object_from_credentials(self, user_email: str, user_pwd: str) -> TypeVar('User'):` in the class `BasicAuth` that returns the `User` instance based on his email and password.
-
-- Return `None` if `user_email` is `None` or not a string
-- Return `None` if `user_pwd` is `None` or not a string
-- Return `None` if your database (file) doesn’t contain any `User` instance with email equal to `user_email` - you should use the class method `search` of the `User` to lookup the list of users based on their email. - Don’t forget to test all cases: “what if there is no user in DB?”, etc.
-- Return `None` if `user_pwd` is not the password of the `User` instance found - you must use the method `is_valid_password` of `User`
-- Otherwise, return the `User` instance
-
-```bash
-bob@dylan:~$ cat main_5.py
-#!/usr/bin/env python3
-""" Main 5
-"""
-import uuid
-from api.v1.auth.basic_auth import BasicAuth
-from models.user import User
-
-""" Create a user test """
-user_email = str(uuid.uuid4())
-user_clear_pwd = str(uuid.uuid4())
-user = User()
-user.email = user_email
-user.first_name = "Bob"
-user.last_name = "Dylan"
-user.password = user_clear_pwd
-print("New user: {}".format(user.display_name()))
-user.save()
-
-""" Retreive this user via the class BasicAuth """
-
-a = BasicAuth()
-
-u = a.user_object_from_credentials(None, None)
-print(u.display_name() if u is not None else "None")
-
-u = a.user_object_from_credentials(89, 98)
-print(u.display_name() if u is not None else "None")
-
-u = a.user_object_from_credentials("email@notfound.com", "pwd")
-print(u.display_name() if u is not None else "None")
-
-u = a.user_object_from_credentials(user_email, "pwd")
-print(u.display_name() if u is not None else "None")
-
-u = a.user_object_from_credentials(user_email, user_clear_pwd)
-print(u.display_name() if u is not None else "None")
-
-bob@dylan:~$
-bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 ./main_5.py 
-New user: Bob Dylan
-None
-None
-None
-None
-Bob Dylan
-bob@dylan:~$
-```
-
-### 11. [Basic - Overload current_user - and BOOM!](api/v1/auth) | [api/v1/auth/basic_auth.py](./api/v1/auth/basic_auth.py) :-
-
-Now, you have all pieces for having a complete Basic authentication.
-
-Add the method `def current_user(self, request=None) -> TypeVar('User')` in the class `BasicAuth` that overloads `Auth` and retrieves the `User` instance for a request:
-
-- You must use `authorization_header`
-- You must use `extract_base64_authorization_header`
-- You must use `decode_base64_authorization_header`
-- You must use `extract_user_credentials`
-- You must use `user_object_from_credentials`
-
-With this update, now your API is fully protected by a Basic Authentication. Enjoy!
+- Slash tolerant
+- You must use `from api.v1.app import auth`
+- You must use `auth.destroy_session(request)` for deleting the Session ID contains in the request as cookie:
+  - If `destroy_session` returns `False`, `abort(404)`
+  - Otherwise, return an empty JSON dictionary with the status code 200
 
 In the first terminal:
 
 ```bash
-bob@dylan:~$ cat main_6.py
-#!/usr/bin/env python3
-""" Main 6
-"""
-import base64
-from api.v1.auth.basic_auth import BasicAuth
-from models.user import User
-
-""" Create a user test """
-user_email = "bob@hbtn.io"
-user_clear_pwd = "H0lbertonSchool98!"
-user = User()
-user.email = user_email
-user.password = user_clear_pwd
-print("New user: {} / {}".format(user.id, user.display_name()))
-user.save()
-
-basic_clear = "{}:{}".format(user_email, user_clear_pwd)
-print("Basic Base64: {}".format(base64.b64encode(basic_clear.encode('utf-8')).decode("utf-8")))
-
-bob@dylan:~$
-bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 ./main_6.py 
-New user: 9375973a-68c7-46aa-b135-29f79e837495 / bob@hbtn.io
-Basic Base64: Ym9iQGhidG4uaW86SDBsYmVydG9uU2Nob29sOTgh
-bob@dylan:~$
-bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 AUTH_TYPE=basic_auth python3 -m api.v1.app
+bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 AUTH_TYPE=session_auth SESSION_NAME=_my_session_id python3 -m api.v1.app
  * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
 ....
 ```
@@ -974,122 +820,67 @@ bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 AUTH_TYPE=basic_auth python3 -m api.
 In a second terminal:
 
 ```bash
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/status"
+bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/auth_session/login" -XPOST -d "email=bobsession@hbtn.io" -d "password=fake pwd" -vvv
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 0.0.0.0...
+* TCP_NODELAY set
+* Connected to 0.0.0.0 (127.0.0.1) port 5000 (#0)
+> POST /api/v1/auth_session/login HTTP/1.1
+> Host: 0.0.0.0:5000
+> User-Agent: curl/7.54.0
+> Accept: */*
+> Content-Length: 42
+> Content-Type: application/x-www-form-urlencoded
+> 
+* upload completely sent off: 42 out of 42 bytes
+* HTTP 1.0, assume close after body
+< HTTP/1.0 200 OK
+< Content-Type: application/json
+< Set-Cookie: _my_session_id=e173cb79-d3fc-4e3a-9e6f-bcd345b24721; Path=/
+< Access-Control-Allow-Origin: *
+< Content-Length: 210
+< Server: Werkzeug/0.12.1 Python/3.4.3
+< Date: Mon, 16 Oct 2017 04:57:08 GMT
+< 
 {
-  "status": "OK"
+  "created_at": "2017-10-16 04:23:04", 
+  "email": "bobsession@hbtn.io", 
+  "first_name": null, 
+  "id": "cf3ddee1-ff24-49e4-a40b-2540333fe992", 
+  "last_name": null, 
+  "updated_at": "2017-10-16 04:23:04"
 }
-bob@dylan:~$ 
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users"
+* Closing connection 0
+bob@dylan:~$
+bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users/me" --cookie "_my_session_id=e173cb79-d3fc-4e3a-9e6f-bcd345b24721"
 {
-  "error": "Unauthorized"
+  "created_at": "2017-10-16 04:23:04", 
+  "email": "bobsession@hbtn.io", 
+  "first_name": null, 
+  "id": "cf3ddee1-ff24-49e4-a40b-2540333fe992", 
+  "last_name": null, 
+  "updated_at": "2017-10-16 04:23:04"
 }
-bob@dylan:~$ 
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users" -H "Authorization: Test"
-{
-  "error": "Forbidden"
-}
-bob@dylan:~$ 
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users" -H "Authorization: Basic test"
+bob@dylan:~$
+bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/auth_session/logout" --cookie "_my_session_id=e173cb79-d3fc-4e3a-9e6f-bcd345b24721"
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<title>405 Method Not Allowed</title>
+<h1>Method Not Allowed</h1>
+<p>The method is not allowed for the requested URL.</p>
+bob@dylan:~$
+bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/auth_session/logout" --cookie "_my_session_id=e173cb79-d3fc-4e3a-9e6f-bcd345b24721" -XDELETE
+{}
+bob@dylan:~$
+bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users/me" --cookie "_my_session_id=e173cb79-d3fc-4e3a-9e6f-bcd345b24721"
 {
   "error": "Forbidden"
 }
 bob@dylan:~$
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users" -H "Authorization: Basic Ym9iQGhidG4uaW86SDBsYmVydG9uU2Nob29sOTgh"
-[
-  {
-    "created_at": "2017-09-25 01:55:17", 
-    "email": "bob@hbtn.io", 
-    "first_name": null, 
-    "id": "9375973a-68c7-46aa-b135-29f79e837495", 
-    "last_name": null, 
-    "updated_at": "2017-09-25 01:55:17"
-  }
-]
-bob@dylan:~$ 
 ```
 
-### 12. [Basic - Allow password with ":"](api/v1/auth) | [api/v1/auth/basic_auth.py](./api/v1/auth/basic_auth.py) :-
+Login, logout… what’s else?
 
-Improve the method `def extract_user_credentials(self, decoded_base64_authorization_header)` to allow password with `:`.
-
-In the first terminal:
-
-```bash
-bob@dylan:~$ cat main_100.py
-#!/usr/bin/env python3
-""" Main 100
-"""
-import base64
-from api.v1.auth.basic_auth import BasicAuth
-from models.user import User
-
-""" Create a user test """
-user_email = "bob100@hbtn.io"
-user_clear_pwd = "H0lberton:School:98!"
-
-user = User()
-user.email = user_email
-user.password = user_clear_pwd
-print("New user: {}".format(user.id))
-user.save()
-
-basic_clear = "{}:{}".format(user_email, user_clear_pwd)
-print("Basic Base64: {}".format(base64.b64encode(basic_clear.encode('utf-8')).decode("utf-8")))
-
-bob@dylan:~$ 
-bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 ./main_100.py 
-New user: 5891469b-d2d5-4d33-b05d-02617d665368
-Basic Base64: Ym9iMTAwQGhidG4uaW86SDBsYmVydG9uOlNjaG9vbDo5OCE=
-bob@dylan:~$
-bob@dylan:~$ API_HOST=0.0.0.0 API_PORT=5000 AUTH_TYPE=basic_auth python3 -m api.v1.app
- * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
-....
-```
-
-In a second terminal:
-
-```bash
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/status"
-{
-  "status": "OK"
-}
-bob@dylan:~$
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users"
-{
-  "error": "Unauthorized"
-}
-bob@dylan:~$ 
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users" -H "Authorization: Test"
-{
-  "error": "Forbidden"
-}
-bob@dylan:~$
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users" -H "Authorization: Basic test"
-{
-  "error": "Forbidden"
-}
-bob@dylan:~$
-bob@dylan:~$ curl "http://0.0.0.0:5000/api/v1/users" -H "Authorization: Basic Ym9iMTAwQGhidG4uaW86SDBsYmVydG9uOlNjaG9vbDo5OCE="
-[
-  {
-    "created_at": "2017-09-25 01:55:17", 
-    "email": "bob@hbtn.io", 
-    "first_name": null, 
-    "id": "9375973a-68c7-46aa-b135-29f79e837495", 
-    "last_name": null, 
-    "updated_at": "2017-09-25 01:55:17"
-  },
-  {
-    "created_at": "2017-09-25 01:59:42", 
-    "email": "bob100@hbtn.io", 
-    "first_name": null, 
-    "id": "5891469b-d2d5-4d33-b05d-02617d665368", 
-    "last_name": null, 
-    "updated_at": "2017-09-25 01:59:42"
-  }
-]
-bob@dylan:~$ 
-```
+Now, after getting a Session ID, you can request all protected API routes by using this Session ID, no need anymore to send User email and password every time.
 
 ### 13. [Require auth with stars](./api/v1/auth/basic_auth.py) :-
 

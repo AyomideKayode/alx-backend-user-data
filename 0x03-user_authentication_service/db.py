@@ -6,6 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
+from sqlalchemy.exc import InvalidRequestError, NoResultFound
 
 from user import Base, User
 
@@ -18,9 +19,10 @@ class DB:
         """Initialize a new DB instance
         """
         # Create an engine to connect to the SQLite database file "a.db"
-        # can set echo to False to hide the SQL queries
+        # can set echo to False to hide the SQL queries in the output
         self._engine = create_engine("sqlite:///a.db", echo=True)
-        # Drop all existing tables defined in the Base metadata from the database
+        # Drop all existing tables defined in the Base metadata
+        # from the database
         Base.metadata.drop_all(self._engine)
         # Create all tables defined in the Base metadata in the database
         Base.metadata.create_all(self._engine)
@@ -48,3 +50,32 @@ class DB:
         self._session.commit()
 
         return new_user
+
+    def find_user_by(self, **kwargs) -> User:
+        """ Find any given User by the passed keyword arguments.
+        Args:
+            **kwargs: Arbitrary keyword arguments to filter users
+        Result:
+            User: The first matching result of the User object.
+        Raises:
+            NoResultFound: If no results are found.
+            InvalidRequestError: If the request is invalid.
+        """
+        # Query all users from the session
+        all_users = self._session.query(User)
+
+        # Iterate over the keyword arguments passed
+        for key, value in kwargs.items():
+            # Check if the User class has the specified attribute
+            if not hasattr(User, key):
+                # Raise an InvalidRequestError if the attribute is not found
+                raise InvalidRequestError
+            # Iterate over each user in the query result
+            for user in all_users:
+                # Check if the attribute value of the user matches
+                # the specified value
+                if getattr(user, key) == value:
+                    # Return the user if a match is found
+                    return user
+        # Raise a NoResultFound exception if no matching user is found
+        raise NoResultFound

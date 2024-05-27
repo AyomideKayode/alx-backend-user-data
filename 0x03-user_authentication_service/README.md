@@ -24,14 +24,54 @@ At the end of this project, you are expected to be able to explain to anyone, wi
 Install `bcrypt`
 
 ```bash
-pip3 install bcrypt
+ayomide@Kazzywiz:~/alx-backend-user-data/0x03-user_authentication_service$ pip3 install bcrypt
+Defaulting to user installation because normal site-packages is not writeable
+Requirement already satisfied: bcrypt in /home/ayomide/.local/lib/python3.8/site-packages (3.1.7)
+Requirement already satisfied: cffi>=1.1 in /home/ayomide/.local/lib/python3.8/site-packages (from bcrypt) (1.16.0)
+Requirement already satisfied: six>=1.4.1 in /usr/lib/python3/dist-packages (from bcrypt) (1.14.0)
+Requirement already satisfied: pycparser in /home/ayomide/.local/lib/python3.8/site-packages (from cffi>=1.1->bcrypt) (2.21)
+ayomide@Kazzywiz:~/alx-backend-user-data/0x03-user_authentication_service$ 
 ```
 
 ## Tasks
 
+### 0. [User model](./user.py) :-
+
+In this task you will create a SQLAlchemy model named `User` for a database table named `users` (by using the [mapping declaration](https://docs.sqlalchemy.org/en/13/orm/tutorial.html#declare-a-mapping) of SQLAlchemy).
+
+The model will have the following attributes:
+
+- `id`, the integer primary key
+- `email`, a non-nullable string
+- `hashed_password`, a non-nullable string
+- `session_id`, a nullable string
+- `reset_token`, a nullable string
+
+```bash
+bob@dylan:~$ cat main.py
+#!/usr/bin/env python3
+"""
+Main file
+"""
+from user import User
+
+print(User.__tablename__)
+
+for column in User.__table__.columns:
+    print("{}: {}".format(column, column.type))
+
+bob@dylan:~$ python3 main.py
+users
+users.id: INTEGER
+users.email: VARCHAR(250)
+users.hashed_password: VARCHAR(250)
+users.session_id: VARCHAR(250)
+users.reset_token: VARCHAR(250)
+bob@dylan:~$ 
+```
+
 | Task | File |
 | ---- | ---- |
-| 0. User model | [user.py](./user.py) |
 | 1. create user | [db.py](./db.py) |
 | 2. Find user | [db.py](./db.py) |
 | 3. update user | [db.py](./db.py) |

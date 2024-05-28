@@ -6,7 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
-from sqlalchemy.exc import InvalidRequestError, NoResultFound
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import InvalidRequestError
 
 from user import Base, User
 
@@ -66,8 +67,8 @@ class DB:
 
         # Iterate over the keyword arguments passed
         for key, value in kwargs.items():
-            # Check if the User class has the specified attribute
-            if not hasattr(User, key):
+            # Check if the key is not an attribute of the User class
+            if key not in User.__dict__:
                 # Raise an InvalidRequestError if the attribute is not found
                 raise InvalidRequestError
             # Iterate over each user in the query result
@@ -75,7 +76,6 @@ class DB:
                 # Check if the attribute value of the user matches
                 # the specified value
                 if getattr(user, key) == value:
-                    # Return the user if a match is found
-                    return user
+                    return user  # Return the user if a match is found
         # Raise a NoResultFound exception if no matching user is found
         raise NoResultFound

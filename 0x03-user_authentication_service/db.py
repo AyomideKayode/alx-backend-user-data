@@ -79,3 +79,28 @@ class DB:
                     return user  # Return the user if a match is found
         # Raise a NoResultFound exception if no matching user is found
         raise NoResultFound
+
+    def update_user(self, user_id: int, **kwargs) -> None:
+        """ Updates a Users attributes
+        Args:
+            user_id (int): The user id
+            **kwargs: Arbitrary keyword arguments to update the user
+        Raises:
+            ValueError: If the user is not found
+        Returns:
+            None
+        """
+        user = self.find_user_by(id=user_id)
+
+        try:
+            user
+        except NoResultFound:
+            raise ValueError
+
+        for key, value in kwargs.items():
+            if hasattr(user, key):
+                setattr(user, key, value)
+            else:
+                raise ValueError
+
+        self._session.commit()

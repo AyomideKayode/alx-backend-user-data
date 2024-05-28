@@ -20,7 +20,7 @@ class DB:
         """
         # Create an engine to connect to the SQLite database file "a.db"
         # can set echo to False to hide the SQL queries in the output
-        self._engine = create_engine("sqlite:///a.db", echo=True)
+        self._engine = create_engine("sqlite:///a.db", echo=False)
         # Drop all existing tables defined in the Base metadata
         # from the database
         Base.metadata.drop_all(self._engine)

@@ -681,3 +681,71 @@ If the token is valid, respond with a 200 HTTP code and the following JSON paylo
 ```bash
 {"email": "<user email>", "message": "Password updated"}
 ```
+
+### 20. [End-to-end integration test](./main.py)
+
+Start your app. Open a new terminal window.
+
+Create a new module called `main.py`. Create one function for each of the following tasks. Use the `requests` module to query your web server for the corresponding end-point. Use `assert` to validate the response’s expected status code and payload (if any) for each task.
+
+- `register_user(email: str, password: str) -> None`
+- `log_in_wrong_password(email: str, password: str) -> None`
+- `log_in(email: str, password: str) -> str`
+- `profile_unlogged() -> None`
+- `profile_logged(session_id: str) -> None`
+- `log_out(session_id: str) -> None`
+- `reset_password_token(email: str) -> str`
+- `update_password(email: str, reset_token: str, new_password: str) -> None`
+
+Then copy the following code at the end of the `main` module:
+
+```bash
+EMAIL = "guillaume@holberton.io"
+PASSWD = "b4l0u"
+NEW_PASSWD = "t4rt1fl3tt3"
+
+
+if __name__ == "__main__":
+
+    register_user(EMAIL, PASSWD)
+    log_in_wrong_password(EMAIL, NEW_PASSWD)
+    profile_unlogged()
+    session_id = log_in(EMAIL, PASSWD)
+    profile_logged(session_id)
+    log_out(session_id)
+    reset_token = reset_password_token(EMAIL)
+    update_password(EMAIL, reset_token, NEW_PASSWD)
+    log_in(EMAIL, NEW_PASSWD)
+```
+
+Run `python main.py`. If everything is correct, you should see no output.
+
+In first Terminal:
+
+```bash
+ayomide@Kazzywiz:~/alx-backend-user-data/0x03-user_authentication_service$ python3 app.py 
+ * Serving Flask app 'app'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.25.249.160:5000
+Press CTRL+C to quit
+127.0.0.1 - - [29/May/2024 22:55:58] "POST /users HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2024 22:55:58] "POST /sessions HTTP/1.1" 401 -
+127.0.0.1 - - [29/May/2024 22:55:58] "GET /profile HTTP/1.1" 403 -
+127.0.0.1 - - [29/May/2024 22:55:59] "POST /sessions HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2024 22:55:59] "GET /profile HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2024 22:55:59] "DELETE /sessions HTTP/1.1" 302 -
+127.0.0.1 - - [29/May/2024 22:55:59] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2024 22:55:59] "POST /reset_password HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2024 22:55:59] "PUT /reset_password HTTP/1.1" 200 -
+127.0.0.1 - - [29/May/2024 22:56:00] "POST /sessions HTTP/1.1" 200 -
+```
+
+In second Terminal:
+
+```bash
+ayomide@Kazzywiz:~/alx-backend-user-data/0x03-user_authentication_service$ python3 main.py
+ayomide@Kazzywiz:~/alx-backend-user-data/0x03-user_authentication_service$
+```

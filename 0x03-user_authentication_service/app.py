@@ -3,7 +3,7 @@
 """ Basic Flask App setup.
 """
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, abort, make_response
 from auth import Auth
 
 app = Flask(__name__)
@@ -32,13 +32,40 @@ def users():
 
     if not email or not password:
         return jsonify({"message": "email and password required"}), 400
-
     try:
         new_user = AUTH.register_user(email, password)
         return jsonify({"email": new_user.email,
                         "message": "user created"}), 200
     except ValueError:
         return jsonify({"message": "email already registered"}), 400
+
+
+@app.route("/sessions", methods=["POST"], strict_slashes=False)
+def login() -> str:
+    """ POST '/sessions' route that logs in a user.
+    Log in users if provided credentials are correct,
+    and create a new session for them.
+    Returns:
+        Response: JSON response indicating success if user was logged in
+                    or error if user does not exist.
+    """
+    email = request.form.get("email")
+    password = request.form.get("password")
+    if not email or not password:
+        return jsonify({"message": "email and password required"}), 400
+
+    if not AUTH.valid_login(email, password):
+        abort(401)  # Abort the request if login credentials are invalid
+
+    session_id = AUTH.create_session(email)
+    if not session_id:
+        abort(401)  # Abort request if session creation fails
+
+    response = make_response(jsonify({"email": f"{email}",
+                                      "message": "logged in"}))
+    # Set the session_id as a cookie in the response
+    response.set_cookie("session_id", session_id)
+    return response
 
 
 if __name__ == "__main__":

@@ -646,10 +646,21 @@ bob@dylan:~$
 
 In this task, you will implement the `Auth.get_reset_password_token` method. It take an `email` string argument and returns a string.
 
-Find the user corresponding to the email. If the user does not exist, raise a ValueError exception. If it exists, generate a UUID and update the user’s reset_token database field. Return the token.
+Find the user corresponding to the email. If the user does not exist, raise a `ValueError` exception. If it exists, generate a UUID and update the user’s `reset_token` database field. Return the token.
+
+### 17. [Get reset password token](./app.py) :-
+
+In this task, you will implement a `get_reset_password_token` function to respond to the `POST /reset_password` route.
+
+The request is expected to contain form data with the `"email"` field.
+
+If the email is not registered, respond with a 403 status code. Otherwise, generate a token and respond with a 200 HTTP status and the following JSON payload:
+
+```bash
+{"email": "<user email>", "reset_token": "<reset token>"}
+```
 
 | Task | File |
 | ---- | ---- |
-| 17. Get reset password token | [app.py](./app.py) |
 | 18. Update password | [auth.py](./auth.py) |
 | 19. Update password end-point | [app.py](./app.py) |

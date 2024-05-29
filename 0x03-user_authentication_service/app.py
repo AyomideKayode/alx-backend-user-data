@@ -86,5 +86,23 @@ def logout() -> str:
     return redirect("/")  # Redirect the user to the home page
 
 
+@app.route("/profile", methods=["GET"], strict_slashes=False)
+def profile() -> str:
+    """ GET '/sessions' route that returns the user's profile(email).
+    Based on the session_id in the request cookies.
+    """
+    # Get the session_id from the request cookies
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        abort(403)  # Abort request if session_id is missing
+    # Get the user associated with the session_id
+    user = AUTH.get_user_from_session_id(session_id)
+    if user is None:
+        abort(403)  # Abort the request if user is not found
+
+    # Return the user's email as a JSON response with a 200 status code
+    return jsonify({"email": user.email}), 200
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

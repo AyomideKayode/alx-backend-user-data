@@ -551,9 +551,16 @@ Note: Unnecessary use of -X or --request, POST is already inferred.
 bob@dylan:~$ 
 ```
 
+### 12. [Find user by session ID](./auth.py) :-
+
+In this task, you will implement the `Auth.get_user_from_session_id` method. It takes a single `session_id` string argument and returns the corresponding `User` or `None`.
+
+If the session ID is `None` or no user is found, return `None`. Otherwise return the corresponding user.
+
+Remember to only use public methods of `self._db`.
+
 | Task | File |
 | ---- | ---- |
-| 12. Find user by session ID | [auth.py](./auth.py) |
 | 13. Destroy session | [auth.py](./auth.py) |
 | 14. Log out | [app.py](./app.py) |
 | 15. User profile | [app.py](./app.py) |

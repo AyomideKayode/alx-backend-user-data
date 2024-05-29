@@ -567,9 +567,16 @@ The method updates the corresponding user’s session ID to `None`.
 
 Remember to only use public methods of `self._db`.
 
+### 14. [Log out](./app.py) :-
+
+In this task, you will implement a `logout` function to respond to the `DELETE /sessions` route.
+
+The request is expected to contain the session ID as a cookie with key `"session_id"`.
+
+Find the user with the requested session ID. If the user exists destroy the session and redirect the user to `GET /`. If the user does not exist, respond with a 403 HTTP status.
+
 | Task | File |
 | ---- | ---- |
-| 14. Log out | [app.py](./app.py) |
 | 15. User profile | [app.py](./app.py) |
 | 16. Generate reset password token | [auth.py](./auth.py) |
 | 17. Get reset password token | [app.py](./app.py) |

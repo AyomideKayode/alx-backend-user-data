@@ -559,9 +559,16 @@ If the session ID is `None` or no user is found, return `None`. Otherwise return
 
 Remember to only use public methods of `self._db`.
 
+### 13. [Destroy session](./auth.py) :-
+
+In this task, you will implement `Auth.destroy_session`. The method takes a single `user_id` integer argument and returns `None`.
+
+The method updates the corresponding user’s session ID to `None`.
+
+Remember to only use public methods of `self._db`.
+
 | Task | File |
 | ---- | ---- |
-| 13. Destroy session | [auth.py](./auth.py) |
 | 14. Log out | [app.py](./app.py) |
 | 15. User profile | [app.py](./app.py) |
 | 16. Generate reset password token | [auth.py](./auth.py) |

@@ -104,9 +104,9 @@ def profile() -> str:
     return jsonify({"email": user.email}), 200
 
 
-@app.route("/reset_token", methods=["POST"], strict_slashes=False)
+@app.route("/reset_password", methods=["POST"], strict_slashes=False)
 def get_reset_password_token() -> str:
-    """ POST '/reset_token' route that generates a reset token.
+    """ POST '/reset_password' route that generates a reset token.
     For resetting a user's password.
     Args:
         email (str): The user's email.

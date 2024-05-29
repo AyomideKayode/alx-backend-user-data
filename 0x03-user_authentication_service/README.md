@@ -660,7 +660,12 @@ If the email is not registered, respond with a 403 status code. Otherwise, gener
 {"email": "<user email>", "reset_token": "<reset token>"}
 ```
 
-| Task | File |
-| ---- | ---- |
-| 18. Update password | [auth.py](./auth.py) |
-| 19. Update password end-point | [app.py](./app.py) |
+### 18. [Update password](./auth.py) :-
+
+In this task, you will implement the `Auth.update_password` method. It takes `reset_token` string argument and a password string argument and returns None.
+
+Use the reset_token to find the corresponding user. If it does not exist, raise a ValueError exception.
+
+Otherwise, hash the password and update the user’s hashed_password field with the new hashed password and the reset_token field to None.
+
+### 19. Update password end-point | [app.py](./app.py) |

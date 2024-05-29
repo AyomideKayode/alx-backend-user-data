@@ -14,6 +14,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, create_engine
 
 # we create base using the declarative_base function
+# for the mapping declaration pattern to be used
 Base = declarative_base()
 
 
